@@ -4,7 +4,7 @@ import { usePathname } from "next/navigation";
 
 export default function AdminNav({ attention, owner }: { attention: number; owner: boolean }) {
   const path = usePathname();
-  const items: [string, string, number?][] = [["/admin", "Today"], ["/admin/bookings", "Bookings", attention], ["/admin/calendar", "Calendar"], ["/admin/experiences", "Experiences"], ["/admin/partners", "Local partners"]];
+  const items: [string, string, number?][] = [["/admin", "Today"], ["/admin/bookings", "Bookings", attention], ["/admin/calendar", "Calendar"], ["/admin/experiences", "Experiences"], ["/admin/partners", "Local partners"], ["/admin/egypt-knight", "Egypt Knight"]];
   if (owner) items.push(["/admin/settings", "Settings & prices"]);
   return (
     <>

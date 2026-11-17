@@ -18,6 +18,7 @@ export type Settings = PriceRules & {
   houseRules: string;
   cancellationPolicy: string;
   reviewUrl: string; // Google review link sent after check-out
+  agencyNightlyUsd: number; // price per night when Egypt Knight books the residence (0 = same as the normal price)
 };
 
 export const DEFAULTS: Settings = {
@@ -32,6 +33,7 @@ export const DEFAULTS: Settings = {
   houseRules: "No smoking inside. No parties or events. Quiet hours 23:00–08:00. Please respect the neighbours.",
   cancellationPolicy: "To change or cancel, message us on WhatsApp as early as you can. We'll explain clearly whether any part of your deposit can be refunded before you decide.",
   reviewUrl: "",
+  agencyNightlyUsd: 0,
 };
 
 export async function getSettings(): Promise<Settings> {

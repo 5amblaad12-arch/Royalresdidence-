@@ -26,6 +26,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
             <F k="minNights" label="Minimum nights" type="number" v={st.minNights} />
             <F k="maxNights" label="Maximum nights online" type="number" v={st.maxNights} />
             <F k="maxGuests" label="Maximum guests" type="number" v={st.maxGuests} />
+            <F k="agencyNightlyUsd" label="Price per night when Egypt Knight books (USD, 0 = same)" type="number" step="0.01" v={st.agencyNightlyUsd} />
           </div>
         </div>
         <div className="card pad"><b>Currency rates</b><div className="small muted">Used to show prices in EUR and EGP. Update them when the rate moves. Example: {fmtMoney(100)} = {fmtMoney(100, "EGP", st.rates)} = {fmtMoney(100, "EUR", st.rates)}</div>

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { requireStaff } from "@/lib/auth";
 import { all, one } from "@/lib/db";
-import { bookingsBetween, toArrange, STATUS_LABEL, toBooking } from "@/lib/data";
+import { bookingsBetween, toArrange, STATUS_LABEL, toBooking, sourceLabel } from "@/lib/data";
 import { getSettings } from "@/lib/settings";
 import { isHolding } from "@/lib/availability";
 import { addDays, eachNight, fmtDay, fmtRange, todayInEgypt, nightsBetween, monthName } from "@/lib/dates";
@@ -77,7 +77,7 @@ export default async function Today({ searchParams }: { searchParams: Promise<{ 
           <div className="card pad">
             <b>Latest bookings</b>
             <div className="tbl-wrap mt8"><table className="tbl"><tbody>{recent.map((b) => (
-              <tr key={b.id}><td><Link href={`/admin/bookings/${b.id}`}><b>{b.name}</b> <span className="small muted">{b.ref}</span></Link></td><td className="small">{fmtRange(b.checkIn, b.checkOut)}</td><td className="small muted">{b.source.replace("_", ".").toLowerCase()}</td><td><span className={`pill ${STATUS_PILL[b.status]}`}>{STATUS_LABEL[b.status]}</span></td></tr>))}</tbody></table></div>
+              <tr key={b.id}><td><Link href={`/admin/bookings/${b.id}`}><b>{b.name}</b> <span className="small muted">{b.ref}</span></Link></td><td className="small">{fmtRange(b.checkIn, b.checkOut)}</td><td className="small muted">{sourceLabel(b.source)}</td><td><span className={`pill ${STATUS_PILL[b.status]}`}>{STATUS_LABEL[b.status]}</span></td></tr>))}</tbody></table></div>
           </div>
         </div>
 

@@ -4,13 +4,13 @@ import { all, one, run, tx } from "./db";
 import { getSettings, type Settings } from "./settings";
 import { quote, stayProblems, type ExtraIn, type ExperiencePrice, type Unit } from "./pricing.ts";
 import { takenNights, isFree, type StayRow } from "./availability.ts";
-import { isISODate, todayInEgypt, eachDay, addDays } from "./dates.ts";
+import { isISODate, todayInEgypt, eachDay, addDays, nightsBetween } from "./dates.ts";
 import { isCurrency } from "./money.ts";
 
 export type Experience = { id: number; slug: string; title: string; category: string; summary: string; description: string; duration: string; timeHint: string; priceUsd: number; costUsd: number; unit: Unit; partnerId: number | null; image: string; sort: number; active: boolean };
 export type Partner = { id: number; name: string; role: string; phone: string; notes: string; active: boolean };
 export type Booking = { id: number; ref: string; token: string; status: string; source: string; checkIn: string; checkOut: string; guests: number; name: string; email: string; phone: string; country: string; arrival: string; notes: string;
-  nightlyUsd: number; nights: number; stayUsd: number; cleaningUsd: number; extrasUsd: number; totalUsd: number; depositUsd: number; payMethod: string; currency: string; holdUntil: number | null; staffNotes: string; seen: boolean; createdAt: number; updatedAt: number };
+  nightlyUsd: number; nights: number; stayUsd: number; cleaningUsd: number; extrasUsd: number; totalUsd: number; depositUsd: number; payMethod: string; currency: string; holdUntil: number | null; staffNotes: string; seen: boolean; partnerRef: string; createdAt: number; updatedAt: number };
 export type Item = { id: number; bookingId: number; experienceId: number | null; title: string; date: string; time: string; qty: number; unit: Unit; priceUsd: number; lineUsd: number; costUsd: number; partnerId: number | null; status: string; note: string };
 export type Payment = { id: number; bookingId: number; amountUsd: number; method: string; status: string; receiptId: number | null; note: string; createdAt: number };
 
@@ -18,7 +18,9 @@ export const STATUS_LABEL: Record<string, string> = {
   REQUEST: "Talking on WhatsApp", AWAITING_DEPOSIT: "Waiting for deposit", RECEIPT_SENT: "Receipt sent — check it", CONFIRMED: "Confirmed",
   CHECKED_IN: "Checked in", COMPLETED: "Completed", CANCELLED: "Cancelled",
 };
-export const SOURCES = ["WEBSITE", "WHATSAPP", "PHONE", "AGENCY", "BOOKING_COM", "AIRBNB", "OTHER"] as const;
+export const SOURCE_LABEL: Record<string, string> = { WEBSITE: "Website", EGYPT_KNIGHT: "Egypt Knight Tours", WHATSAPP: "WhatsApp", PHONE: "Phone", AGENCY: "Agency", BOOKING_COM: "Booking.com", AIRBNB: "Airbnb", OTHER: "Other" };
+export const sourceLabel = (s: string) => SOURCE_LABEL[s] ?? s;
+export const SOURCES = ["WEBSITE", "EGYPT_KNIGHT", "WHATSAPP", "PHONE", "AGENCY", "BOOKING_COM", "AIRBNB", "OTHER"] as const;
 
 const n = (v: unknown) => Number(v ?? 0);
 const s = (v: unknown) => (v == null ? "" : String(v));
@@ -30,7 +32,7 @@ function toExperience(r: Record<string, unknown>): Experience {
 export function toBooking(r: Record<string, unknown>): Booking {
   return { id: n(r.id), ref: s(r.ref), token: s(r.token), status: s(r.status), source: s(r.source), checkIn: s(r.check_in), checkOut: s(r.check_out), guests: n(r.guests), name: s(r.name), email: s(r.email), phone: s(r.phone),
     country: s(r.country), arrival: s(r.arrival), notes: s(r.notes), nightlyUsd: n(r.nightly_usd), nights: n(r.nights), stayUsd: n(r.stay_usd), cleaningUsd: n(r.cleaning_usd), extrasUsd: n(r.extras_usd), totalUsd: n(r.total_usd),
-    depositUsd: n(r.deposit_usd), payMethod: s(r.pay_method), currency: s(r.currency), holdUntil: r.hold_until == null ? null : n(r.hold_until), staffNotes: s(r.staff_notes), seen: n(r.seen) === 1, createdAt: n(r.created_at), updatedAt: n(r.updated_at) };
+    depositUsd: n(r.deposit_usd), payMethod: s(r.pay_method), currency: s(r.currency), holdUntil: r.hold_until == null ? null : n(r.hold_until), staffNotes: s(r.staff_notes), seen: n(r.seen) === 1, partnerRef: s(r.partner_ref), createdAt: n(r.created_at), updatedAt: n(r.updated_at) };
 }
 function toItem(r: Record<string, unknown>): Item {
   return { id: n(r.id), bookingId: n(r.booking_id), experienceId: r.experience_id == null ? null : n(r.experience_id), title: s(r.title), date: s(r.date), time: s(r.time), qty: n(r.qty), unit: s(r.unit) === "GROUP" ? "GROUP" : "PERSON",
@@ -160,6 +162,47 @@ export async function toArrange(days = 14) {
     FROM booking_items i JOIN bookings b ON b.id = i.booking_id LEFT JOIN partners p ON p.id = i.partner_id
     WHERE i.status = 'TO_ARRANGE' AND i.date >= ? AND i.date <= ? AND b.status IN ('CONFIRMED','CHECKED_IN','RECEIPT_SENT') ORDER BY i.date, i.time`, [today, addDays(today, days)]);
   return rows.map((r) => ({ ...toItem(r), ref: s(r.ref), guest: s(r.guest), guests: n(r.guests), arrival: s(r.arrival), bstatus: s(r.bstatus), partner: s(r.partner), partnerPhone: s(r.partner_phone) }));
+}
+
+// ---------- bookings made by Egypt Knight Tours through the private link ----------
+export type PartnerBookingIn = { checkIn: string; checkOut: string; guests: number; name: string; phone: string; email: string; notes: string; partnerRef: string; staffName: string };
+
+export async function createPartnerBooking(raw: PartnerBookingIn): Promise<CreateResult> {
+  const st = await getSettings();
+  const checkIn = String(raw.checkIn ?? ""), checkOut = String(raw.checkOut ?? ""), guests = Math.floor(Number(raw.guests));
+  if (!isISODate(checkIn) || !isISODate(checkOut)) return { ok: false, error: "Choose check-in and check-out dates." };
+  // Egypt Knight is trusted on stay length (it may book a single night before a cruise); only dates and guests are checked.
+  const problems = stayProblems({ checkIn, checkOut, guests, today: todayInEgypt(), rules: { ...st, minNights: 1, maxNights: 60 } });
+  if (problems.length) return { ok: false, error: problems[0] };
+  const name = clip(raw.name, 80);
+  if (name.length < 2) return { ok: false, error: "Enter the guest's name." };
+  if (!isFree(await loadTaken(), checkIn, checkOut)) return { ok: false, error: "Those nights are no longer free at the residence. Pick other dates." };
+  const nightly = st.agencyNightlyUsd > 0 ? st.agencyNightlyUsd : st.nightlyUsd;
+  const nights = nightsBetween(checkIn, checkOut);
+  const stay = Math.round(nights * nightly * 100) / 100, total = Math.round((stay + st.cleaningUsd) * 100) / 100;
+  const ref = await newRef(), token = newToken(), now = Date.now();
+  const partnerRef = clip(raw.partnerRef, 40), staff = clip(raw.staffName, 60);
+  await tx([
+    { sql: `INSERT INTO bookings (ref, token, status, source, check_in, check_out, guests, name, email, phone, notes, nightly_usd, nights, stay_usd, cleaning_usd, extras_usd, total_usd, deposit_usd, pay_method, currency, hold_until, partner_ref, staff_notes, seen, created_at, updated_at)
+            VALUES (?,?,'CONFIRMED','EGYPT_KNIGHT',?,?,?,?,?,?,?,?,?,?,?,0,?,0,'AGENCY','USD',NULL,?,?,0,?,?)`,
+      args: [ref, token, checkIn, checkOut, guests, name, clip(raw.email, 120), clip(raw.phone, 30), clip(raw.notes, 1000), nightly, nights, stay, st.cleaningUsd, total, partnerRef, `Booked by Egypt Knight Tours${staff ? ` (${staff})` : ""}${partnerRef ? ` · their order ${partnerRef}` : ""}`, now, now] },
+    { sql: "INSERT INTO events (booking_id, text, created_at) VALUES ((SELECT id FROM bookings WHERE ref = ?), ?, ?)", args: [ref, `Booked by Egypt Knight Tours${staff ? ` — ${staff}` : ""}`, now] },
+  ]);
+  const b = await getBookingByToken(token);
+  return b ? { ok: true, token, ref, booking: b } : { ok: false, error: "The booking couldn't be saved. Please try again." };
+}
+
+export async function listPartnerBookings(limit = 100): Promise<(Booking & { paid: number })[]> {
+  const rows = await all(`SELECT b.*, (SELECT COALESCE(SUM(amount_usd),0) FROM payments p WHERE p.booking_id = b.id AND p.status = 'CONFIRMED') AS paid
+    FROM bookings b WHERE source = 'EGYPT_KNIGHT' ORDER BY check_in DESC LIMIT ?`, [limit]);
+  return rows.map((r) => ({ ...toBooking(r), paid: n(r.paid) }));
+}
+
+// ---------- requests sent from the residence to Egypt Knight ----------
+export type SentRequest = { id: number; bookingId: number; ref: string; summary: string; createdBy: string; createdAt: number; bookingRef?: string; guest?: string };
+export async function listSentRequests(bookingId?: number): Promise<SentRequest[]> {
+  const rows = await all(`SELECT r.*, b.ref AS booking_ref, b.name AS guest FROM partner_requests r LEFT JOIN bookings b ON b.id = r.booking_id ${bookingId ? "WHERE r.booking_id = ?" : ""} ORDER BY r.created_at DESC LIMIT 200`, bookingId ? [bookingId] : []);
+  return rows.map((r) => ({ id: n(r.id), bookingId: n(r.booking_id), ref: s(r.ref), summary: s(r.summary), createdBy: s(r.created_by), createdAt: n(r.created_at), bookingRef: s(r.booking_ref), guest: s(r.guest) }));
 }
 
 export type { Settings };

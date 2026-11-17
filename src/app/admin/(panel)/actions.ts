@@ -4,8 +4,9 @@ import { revalidatePath } from "next/cache";
 import { requireStaff, destroySession } from "@/lib/auth";
 import { run, one, tx } from "@/lib/db";
 import { getBooking, getExperience, logEvent, loadTaken, newRef, newToken } from "@/lib/data";
+import { ekSendRequest } from "@/lib/egyptknight";
 import { getSettings, saveSettings, DEFAULTS, type Settings } from "@/lib/settings";
-import { isISODate, nightsBetween } from "@/lib/dates";
+import { isISODate, nightsBetween, fmtDay } from "@/lib/dates";
 import { isFree } from "@/lib/availability";
 import { r2, unitQty } from "@/lib/pricing";
 
@@ -209,8 +210,26 @@ export async function saveSettingsForm(fd: FormData) {
     whatsapp: str(fd, "whatsapp", 20).replace(/\D/g, "") || DEFAULTS.whatsapp, email: str(fd, "email", 120),
     instapay: str(fd, "instapay", 120), bankDetails: str(fd, "bankDetails", 600), paymentNote: str(fd, "paymentNote", 300),
     checkInTime: str(fd, "checkInTime", 10), checkOutTime: str(fd, "checkOutTime", 10), address: str(fd, "address", 200), mapsUrl: /^https:\/\//.test(str(fd, "mapsUrl", 400)) ? str(fd, "mapsUrl", 400) : "",
-    arrivalInfo: str(fd, "arrivalInfo", 1500), houseRules: str(fd, "houseRules", 1500), cancellationPolicy: str(fd, "cancellationPolicy", 1500), reviewUrl: /^https:\/\//.test(str(fd, "reviewUrl", 400)) ? str(fd, "reviewUrl", 400) : "",
+    agencyNightlyUsd: r2(pos("agencyNightlyUsd")), arrivalInfo: str(fd, "arrivalInfo", 1500), houseRules: str(fd, "houseRules", 1500), cancellationPolicy: str(fd, "cancellationPolicy", 1500), reviewUrl: /^https:\/\//.test(str(fd, "reviewUrl", 400)) ? str(fd, "reviewUrl", 400) : "",
   };
   await saveSettings(patch);
   revalidatePath("/", "layout"); redirect("/admin/settings?m=Saved");
+}
+
+/** Book a tour or service with Egypt Knight Tours for one of the residence's guests. It lands in Egypt Knight's own admin. */
+export async function sendToEgyptKnight(fd: FormData) {
+  const s = await requireStaff(); const id = int(fd, "id");
+  const b = await getBooking(id); if (!b) redirect("/admin/bookings");
+  const what = str(fd, "what", 80); const date = str(fd, "date");
+  if (!what) back(id, "Choose what to book with Egypt Knight");
+  if (!isISODate(date)) back(id, "Choose the day");
+  const people = Math.max(1, Math.min(50, int(fd, "people") || b.guests));
+  const [kind, val] = what.split(":");
+  const item = { tourId: kind === "tour" ? val : null, type: kind === "type" ? val : "OTHER", label: str(fd, "label", 160), date, time: str(fd, "time", 10), people };
+  const r = await ekSendRequest({ bookingRef: b.ref, guestName: b.name, guestPhone: b.phone, guests: b.guests, checkIn: b.checkIn, checkOut: b.checkOut, item, notes: str(fd, "notes", 1000), staffName: s.name || s.email });
+  if (!r.ok) back(id, `Couldn't send to Egypt Knight: ${r.error}`);
+  const summary = `${r.data.label || item.label || "Service"} · ${fmtDay(date)}${item.time ? ` ${item.time}` : ""} · ${people} ${people > 1 ? "people" : "person"}`;
+  await run("INSERT INTO partner_requests (booking_id, ref, summary, created_by, created_at) VALUES (?, ?, ?, ?, ?)", [id, r.data.ref, summary, s.name || s.email, Date.now()]);
+  await logEvent(id, `${s.name || s.email}: booked with Egypt Knight (${r.data.ref}) — ${summary}`);
+  back(id, `Sent to Egypt Knight as ${r.data.ref}`);
 }

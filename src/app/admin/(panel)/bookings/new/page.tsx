@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { requireStaff } from "@/lib/auth";
 import { getSettings } from "@/lib/settings";
-import { SOURCES } from "@/lib/data";
+import { SOURCES, sourceLabel } from "@/lib/data";
 import { createManual } from "../../actions";
 
 export const dynamic = "force-dynamic";
@@ -25,7 +25,7 @@ export default async function NewBooking({ searchParams }: { searchParams: Promi
           <label className="field"><span>WhatsApp / phone</span><input name="phone" /></label>
           <label className="field"><span>Email</span><input name="email" type="email" /></label>
           <label className="field"><span>Country</span><input name="country" /></label>
-          <label className="field"><span>Came from</span><select name="source" defaultValue="WHATSAPP">{SOURCES.map((s) => <option key={s} value={s}>{s.replace("_", ".").toLowerCase()}</option>)}</select></label>
+          <label className="field"><span>Came from</span><select name="source" defaultValue="WHATSAPP">{SOURCES.map((s) => <option key={s} value={s}>{sourceLabel(s)}</option>)}</select></label>
           <label className="field"><span>Status</span><select name="status" defaultValue="CONFIRMED"><option value="CONFIRMED">Confirmed</option><option value="AWAITING_DEPOSIT">Waiting for deposit (hold {st.holdHours}h)</option><option value="REQUEST">Talking on WhatsApp (hold {st.holdHours}h)</option></select></label>
           <label className="field" style={{ gridColumn: "1 / -1" }}><span>Arrival (flight / train / time)</span><input name="arrival" /></label>
           <label className="field" style={{ gridColumn: "1 / -1" }}><span>Team notes (guests don't see these)</span><textarea name="staffNotes" /></label>

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { requireStaff } from "@/lib/auth";
-import { listBookings, STATUS_LABEL } from "@/lib/data";
+import { listBookings, STATUS_LABEL, sourceLabel } from "@/lib/data";
 import { fmtRange } from "@/lib/dates";
 import { usd } from "@/lib/money";
 import { STATUS_PILL } from "@/components/ui";
@@ -31,7 +31,7 @@ export default async function Bookings({ searchParams }: { searchParams: Promise
                 <td><Link href={`/admin/bookings/${b.id}`}><b>{b.name}</b>{!b.seen ? <span className="badge" style={{ marginLeft: 6 }}>NEW</span> : null}<div className="small muted">{b.ref} · {b.phone}</div></Link></td>
                 <td className="small">{fmtRange(b.checkIn, b.checkOut)} <span className="muted">({b.nights}n)</span></td>
                 <td className="small">{b.guests}</td>
-                <td className="small muted">{b.source.replace("_", ".").toLowerCase()}</td>
+                <td className="small muted">{sourceLabel(b.source)}</td>
                 <td><span className={`pill ${STATUS_PILL[b.status]}`}>{STATUS_LABEL[b.status]}</span></td>
                 <td className="small" style={{ textAlign: "right" }}>{usd(b.totalUsd)}</td>
                 <td className="small" style={{ textAlign: "right", color: b.paid >= b.totalUsd ? "var(--green)" : undefined }}>{usd(b.paid)}</td>

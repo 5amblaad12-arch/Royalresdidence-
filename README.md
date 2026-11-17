@@ -24,6 +24,14 @@ Built by **Nino Techy**. Next.js 15 · Turso (libSQL) · Vercel.
 3. Owner opens the booking → *View receipt* → **Confirm** → booking confirmed, the guest's page shows arrival info.
 4. If nobody pays in time, the hold ends by itself and the dates are free again.
 
+## Link with Egypt Knight Tours
+
+Two separate businesses, each with its own admin, linked privately:
+- **Egypt Knight → residence:** in Egypt Knight's admin, *Royal Nile* shows the residence's free dates and books it for their guests. The booking appears here as *via Egypt Knight Tours*, confirmed, at the partner price (*Settings & prices → Price per night when Egypt Knight books*).
+- **Residence → Egypt Knight:** on any booking, *Egypt Knight Tours → Book with Egypt Knight* sends a tour or service to Egypt Knight. It lands in their *Corporate* requests; its status and price show back here (and on the *Egypt Knight* page).
+
+To switch it on, add on **both** Vercel projects the same `LINK_SECRET` (48+ random characters), plus `EGYPT_KNIGHT_URL` here and `ROYAL_NILE_URL` on Egypt Knight. Every message between the two sites is signed and expires after 5 minutes.
+
 ## Set up (one time, ~15 minutes)
 
 1. **Database — Turso** (free): create a database, copy its URL (`libsql://…`) and create a token.

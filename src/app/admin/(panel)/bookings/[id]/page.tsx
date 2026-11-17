@@ -2,13 +2,14 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireStaff } from "@/lib/auth";
 import { run } from "@/lib/db";
-import { getBooking, getItems, getPayments, getEvents, listExperiences, listPartners, STATUS_LABEL, SOURCES } from "@/lib/data";
+import { getBooking, getItems, getPayments, getEvents, listExperiences, listPartners, STATUS_LABEL, SOURCES, sourceLabel } from "@/lib/data";
 import { getSettings } from "@/lib/settings";
 import { fmtDay, fmtLong, eachDay } from "@/lib/dates";
 import { usd, fmtMoney } from "@/lib/money";
 import { waLink } from "@/lib/wa";
 import { siteUrl } from "@/lib/notify";
 import { STATUS_PILL } from "@/components/ui";
+import EgyptKnightBox from "@/components/EgyptKnightBox";
 import { setStatus, extendHold, savePaymentDecision, addPayment, updateItem, addItem, removeItem, updateStay, updateGuest } from "../../actions";
 
 export const dynamic = "force-dynamic";
@@ -52,7 +53,7 @@ export default async function BookingPage({ params, searchParams }: { params: Pr
       {m ? <div className={`msg ${/can't|check|overlap|not found|enter|choose/i.test(m) ? "bad" : ""}`}>{m}</div> : null}
       <div className="adm-h">
         <div><Link className="small link" href="/admin/bookings">‹ Bookings</Link><h1>{b.name} <span className="muted" style={{ fontWeight: 500, fontSize: 18 }}>{b.ref}</span></h1>
-          <div className="row mt8"><span className={`pill ${STATUS_PILL[b.status]}`}>{STATUS_LABEL[b.status]}</span>{expired ? <span className="pill pill-red">Hold expired — dates are free again</span> : null}{b.holdUntil && !expired ? <span className="small muted">Held until {new Date(b.holdUntil).toLocaleString("en-GB", { timeZone: "Africa/Cairo", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</span> : null}<span className="small muted">via {b.source.replace("_", ".").toLowerCase()}</span></div></div>
+          <div className="row mt8"><span className={`pill ${STATUS_PILL[b.status]}`}>{STATUS_LABEL[b.status]}</span>{expired ? <span className="pill pill-red">Hold expired — dates are free again</span> : null}{b.holdUntil && !expired ? <span className="small muted">Held until {new Date(b.holdUntil).toLocaleString("en-GB", { timeZone: "Africa/Cairo", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</span> : null}<span className="small muted">via {b.source === "EGYPT_KNIGHT" ? `Egypt Knight Tours${b.partnerRef ? ` (their order ${b.partnerRef})` : ""}` : sourceLabel(b.source)}</span></div></div>
         <span className="spacer" />
         {(NEXT[b.status] ?? []).map(([st2, t]) => <form key={st2} action={setStatus}><input type="hidden" name="id" value={id} /><input type="hidden" name="status" value={st2} /><button className="btn btn-navy btn-sm" type="submit">{t}</button></form>)}
         {["REQUEST", "AWAITING_DEPOSIT"].includes(b.status) ? <form action={extendHold}><input type="hidden" name="id" value={id} /><button className="btn btn-light btn-sm" type="submit">Hold 24h more</button></form> : null}
@@ -118,6 +119,8 @@ export default async function BookingPage({ params, searchParams }: { params: Pr
             <div className="row mt16">{msgs.map(([t, txt]) => <a key={t} className="btn btn-wa btn-sm" href={waLink(b.phone, txt)} target="_blank" rel="noopener">{t}</a>)}</div>
             {!b.phone ? <p className="small muted mt8">Add the guest's WhatsApp number below to use these.</p> : null}
           </div>
+
+          {b.status !== "CANCELLED" ? <EgyptKnightBox b={b} /> : null}
         </div>
 
         <div className="stack">
@@ -145,7 +148,7 @@ export default async function BookingPage({ params, searchParams }: { params: Pr
               <label className="field"><span>Email</span><input name="email" defaultValue={b.email} /></label>
               <label className="field"><span>Country</span><input name="country" defaultValue={b.country} /></label>
               <label className="field"><span>Arrival</span><input name="arrival" defaultValue={b.arrival} /></label>
-              <label className="field"><span>Came from</span><select name="source" defaultValue={b.source}>{SOURCES.map((x) => <option key={x} value={x}>{x.replace("_", ".").toLowerCase()}</option>)}</select></label>
+              <label className="field"><span>Came from</span><select name="source" defaultValue={b.source}>{SOURCES.map((x) => <option key={x} value={x}>{sourceLabel(x)}</option>)}</select></label>
               <label className="field"><span>Guest's message</span><textarea name="notes" defaultValue={b.notes} /></label>
               <label className="field"><span>Team notes (private)</span><textarea name="staffNotes" defaultValue={b.staffNotes} /></label>
             </div>

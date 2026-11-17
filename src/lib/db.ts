@@ -25,7 +25,7 @@ const SCHEMA = [
     check_in TEXT NOT NULL, check_out TEXT NOT NULL, guests INTEGER NOT NULL, name TEXT NOT NULL, email TEXT NOT NULL DEFAULT '', phone TEXT NOT NULL DEFAULT '', country TEXT NOT NULL DEFAULT '',
     arrival TEXT NOT NULL DEFAULT '', notes TEXT NOT NULL DEFAULT '', nightly_usd REAL NOT NULL, nights INTEGER NOT NULL, stay_usd REAL NOT NULL, cleaning_usd REAL NOT NULL DEFAULT 0, extras_usd REAL NOT NULL DEFAULT 0,
     total_usd REAL NOT NULL, deposit_usd REAL NOT NULL, pay_method TEXT NOT NULL DEFAULT 'TRANSFER', currency TEXT NOT NULL DEFAULT 'USD', hold_until INTEGER, staff_notes TEXT NOT NULL DEFAULT '',
-    seen INTEGER NOT NULL DEFAULT 0, ip TEXT NOT NULL DEFAULT '', created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL)`,
+    seen INTEGER NOT NULL DEFAULT 0, ip TEXT NOT NULL DEFAULT '', partner_ref TEXT NOT NULL DEFAULT '', created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL)`,
   `CREATE INDEX IF NOT EXISTS bookings_dates ON bookings (check_in, check_out)`,
   `CREATE TABLE IF NOT EXISTS booking_items (id INTEGER PRIMARY KEY AUTOINCREMENT, booking_id INTEGER NOT NULL, experience_id INTEGER, title TEXT NOT NULL, date TEXT NOT NULL, time TEXT NOT NULL DEFAULT '',
     qty INTEGER NOT NULL DEFAULT 1, unit TEXT NOT NULL DEFAULT 'PERSON', price_usd REAL NOT NULL, line_usd REAL NOT NULL, cost_usd REAL NOT NULL DEFAULT 0, partner_id INTEGER, status TEXT NOT NULL DEFAULT 'TO_ARRANGE', note TEXT NOT NULL DEFAULT '')`,
@@ -37,13 +37,21 @@ const SCHEMA = [
   `CREATE TABLE IF NOT EXISTS blocks (id INTEGER PRIMARY KEY AUTOINCREMENT, date_from TEXT NOT NULL, date_to TEXT NOT NULL, reason TEXT NOT NULL DEFAULT '', created_at INTEGER NOT NULL)`,
   `CREATE TABLE IF NOT EXISTS events (id INTEGER PRIMARY KEY AUTOINCREMENT, booking_id INTEGER NOT NULL, text TEXT NOT NULL, created_at INTEGER NOT NULL)`,
   `CREATE INDEX IF NOT EXISTS events_booking ON events (booking_id)`,
+  `CREATE TABLE IF NOT EXISTS partner_requests (id INTEGER PRIMARY KEY AUTOINCREMENT, booking_id INTEGER NOT NULL, ref TEXT NOT NULL, summary TEXT NOT NULL DEFAULT '', created_by TEXT NOT NULL DEFAULT '', created_at INTEGER NOT NULL)`,
+  `CREATE INDEX IF NOT EXISTS partner_requests_booking ON partner_requests (booking_id)`,
   `CREATE TABLE IF NOT EXISTS hits (key TEXT NOT NULL, at INTEGER NOT NULL)`,
   `CREATE INDEX IF NOT EXISTS hits_key ON hits (key, at)`,
+];
+
+// Columns added after the first release. Each runs once; "duplicate column" errors on newer databases are expected.
+const ADD_COLUMNS = [
+  `ALTER TABLE bookings ADD COLUMN partner_ref TEXT NOT NULL DEFAULT ''`,
 ];
 
 async function setup() {
   const c = client();
   await c.batch(SCHEMA, "write");
+  for (const sql of ADD_COLUMNS) { try { await c.execute(sql); } catch { /* already there */ } }
   // First run: add the starting experiences and partners (the owner edits them in the admin).
   const n = await c.execute("SELECT COUNT(*) AS n FROM experiences");
   if (Number(n.rows[0]?.n ?? 0) === 0) {
