@@ -4,6 +4,7 @@ import { listExperiences, loadTaken } from "@/lib/data";
 import { getCurrency } from "@/lib/view";
 import { todayInEgypt, isISODate } from "@/lib/dates";
 import BookingPlanner from "@/components/BookingPlanner";
+import { freeWindows } from "@/lib/availability";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Book your stay", description: "Choose your dates, plan your days in Aswan and book The Royal Nile Residence." };
@@ -20,13 +21,14 @@ export default async function Book({ searchParams }: { searchParams: Promise<Rec
     <BookingPlanner
       today={today}
       taken={[...taken].sort()}
+      windows={freeWindows(taken, today, Math.max(3, st.minNights), 4)}
       initial={{ checkIn: inD, checkOut: outD, guests: g }}
       currency={cur}
       rates={st.rates}
       rules={{ nightlyUsd: st.nightlyUsd, cleaningUsd: st.cleaningUsd, depositPct: st.depositPct, minNights: st.minNights, maxGuests: st.maxGuests, maxNights: st.maxNights }}
       holdHours={st.holdHours}
       whatsapp={st.whatsapp}
-      experiences={exps.map((e) => ({ id: e.id, slug: e.slug, title: e.title, summary: e.summary, duration: e.duration, timeHint: e.timeHint, image: e.image, priceUsd: e.priceUsd, costUsd: 0, unit: e.unit, partnerId: null }))}
+      experiences={exps.map((e) => ({ id: e.id, slug: e.slug, title: e.title, summary: e.summary, duration: e.duration, timeHint: e.timeHint, image: e.image, category: e.category, priceUsd: e.priceUsd, costUsd: 0, unit: e.unit, partnerId: null }))}
     />
   );
 }
