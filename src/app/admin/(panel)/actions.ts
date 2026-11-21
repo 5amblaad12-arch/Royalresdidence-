@@ -210,7 +210,7 @@ export async function saveSettingsForm(fd: FormData) {
     whatsapp: str(fd, "whatsapp", 20).replace(/\D/g, "") || DEFAULTS.whatsapp, email: str(fd, "email", 120),
     instapay: str(fd, "instapay", 120), bankDetails: str(fd, "bankDetails", 600), paymentNote: str(fd, "paymentNote", 300),
     checkInTime: str(fd, "checkInTime", 10), checkOutTime: str(fd, "checkOutTime", 10), address: str(fd, "address", 200), mapsUrl: /^https:\/\//.test(str(fd, "mapsUrl", 400)) ? str(fd, "mapsUrl", 400) : "",
-    agencyNightlyUsd: r2(pos("agencyNightlyUsd")), arrivalInfo: str(fd, "arrivalInfo", 1500), houseRules: str(fd, "houseRules", 1500), cancellationPolicy: str(fd, "cancellationPolicy", 1500), reviewUrl: /^https:\/\//.test(str(fd, "reviewUrl", 400)) ? str(fd, "reviewUrl", 400) : "",
+    agencyNightlyUsd: r2(pos("agencyNightlyUsd")), mapLat: Math.abs(num(fd, "mapLat")) <= 90 && num(fd, "mapLat") ? num(fd, "mapLat") : DEFAULTS.mapLat, mapLng: Math.abs(num(fd, "mapLng")) <= 180 && num(fd, "mapLng") ? num(fd, "mapLng") : DEFAULTS.mapLng, arrivalInfo: str(fd, "arrivalInfo", 1500), houseRules: str(fd, "houseRules", 1500), cancellationPolicy: str(fd, "cancellationPolicy", 1500), reviewUrl: /^https:\/\//.test(str(fd, "reviewUrl", 400)) ? str(fd, "reviewUrl", 400) : "",
   };
   await saveSettings(patch);
   revalidatePath("/", "layout"); redirect("/admin/settings?m=Saved");

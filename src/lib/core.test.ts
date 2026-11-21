@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { isISODate, addDays, nightsBetween, eachNight, eachDay, fmtDay, fmtRange, todayInEgypt } from "./dates.ts";
 import { quote, stayProblems, unitQty, type PriceRules, type ExperiencePrice } from "./pricing.ts";
 import { fmtMoney, convert } from "./money.ts";
-import { takenNights, isFree, isHolding } from "./availability.ts";
+import { takenNights, isFree, isHolding, freeWindows } from "./availability.ts";
 
 const rules: PriceRules = { nightlyUsd: 85, cleaningUsd: 0, depositPct: 25, minNights: 2, maxGuests: 6, maxNights: 30 };
 const cat: ExperiencePrice[] = [
@@ -76,4 +76,11 @@ test("availability: holds expire, cancelled frees, blocks count", () => {
   assert.equal(isFree(t, "2027-03-02", "2027-03-04"), false);
   assert.equal(isHolding(stays[3], now + 7200_000), false);
   assert.equal(isFree(takenNights(stays, [], now, 1), "2027-02-02", "2027-02-05"), true); // editing booking 1 ignores itself
+});
+
+test("next free windows skip booked nights and don't overlap", () => {
+  const taken = new Set(["2027-02-03", "2027-02-04", "2027-02-09"]);
+  assert.deepEqual(freeWindows(taken, "2027-02-01", 3, 3), [
+    { checkIn: "2027-02-05", checkOut: "2027-02-08" }, { checkIn: "2027-02-10", checkOut: "2027-02-13" }, { checkIn: "2027-02-13", checkOut: "2027-02-16" }]);
+  assert.deepEqual(freeWindows(new Set(), "2027-02-01", 2, 2), [{ checkIn: "2027-02-01", checkOut: "2027-02-03" }, { checkIn: "2027-02-03", checkOut: "2027-02-05" }]);
 });

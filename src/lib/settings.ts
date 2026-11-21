@@ -19,6 +19,8 @@ export type Settings = PriceRules & {
   cancellationPolicy: string;
   reviewUrl: string; // Google review link sent after check-out
   agencyNightlyUsd: number; // price per night when Egypt Knight books the residence (0 = same as the normal price)
+  mapLat: number; // map pin (set the exact building in Settings)
+  mapLng: number;
 };
 
 export const DEFAULTS: Settings = {
@@ -34,6 +36,7 @@ export const DEFAULTS: Settings = {
   cancellationPolicy: "To change or cancel, message us on WhatsApp as early as you can. We'll explain clearly whether any part of your deposit can be refunded before you decide.",
   reviewUrl: "",
   agencyNightlyUsd: 0,
+  mapLat: 24.1096, mapLng: 32.9014, // next to Tolip Aswan Hotel until the owner sets the exact building
 };
 
 export async function getSettings(): Promise<Settings> {

@@ -48,6 +48,8 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
             <F k="email" label="Email for booking alerts" type="email" v={st.email} />
             <F k="address" label="Address line" v={st.address} wide />
             <F k="mapsUrl" label="Google Maps link" v={st.mapsUrl} wide />
+            <F k="mapLat" label="Map pin — latitude" type="number" step="0.000001" v={st.mapLat} hint="In Google Maps, long-press the building, then copy the two numbers (e.g. 24.1096, 32.9014)." />
+            <F k="mapLng" label="Map pin — longitude" type="number" step="0.000001" v={st.mapLng} />
             <F k="reviewUrl" label="Google review link (sent after check-out)" v={st.reviewUrl} wide />
           </div>
         </div>

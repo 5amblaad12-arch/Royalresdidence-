@@ -1,102 +1,143 @@
 import Link from "next/link";
 import { getSettings } from "@/lib/settings";
-import { listExperiences } from "@/lib/data";
+import { listExperiences, loadTaken } from "@/lib/data";
 import { getCurrency, pricer } from "@/lib/view";
-import { todayInEgypt, addDays } from "@/lib/dates";
-import { Icon, ExpCard, WaIcon } from "@/components/ui";
-import { ROOMS, FAQ } from "@/lib/content";
+import { todayInEgypt, fmtLong } from "@/lib/dates";
+import { freeWindows } from "@/lib/availability";
+import { Icon, WaIcon } from "@/components/ui";
+import { FAQ } from "@/lib/content";
 import { waLink } from "@/lib/wa";
+import HeroBooking from "@/components/HeroBooking";
+import ArrivalMap from "@/components/ArrivalMap";
+import StickyBook from "@/components/StickyBook";
 
 export const dynamic = "force-dynamic";
 
+const SPACES = [
+  { src: "/photos/twin_wide.webp", t: "Bedroom 2", d: "Two twin beds · Nile balcony" },
+  { src: "/photos/king.webp", t: "Bedroom 1", d: "King-size bed · big wardrobe" },
+  { src: "/photos/balcony.webp", t: "The balcony", d: "Sunset over the west bank" },
+  { src: "/photos/twin_door.webp", t: "Bedroom 3", d: "Two twin beds · French balcony" },
+  { src: "/photos/feluccas.webp", t: "The view", d: "Feluccas on the Nile, all day" },
+  { src: "/photos/desk_mirror.webp", t: "Details", d: "A/C, TV and a desk in every room" },
+];
+
 export default async function Home() {
-  const [st, exps, cur] = await Promise.all([getSettings(), listExperiences(), getCurrency()]);
+  const [st, exps, cur, taken] = await Promise.all([getSettings(), listExperiences(), getCurrency(), loadTaken()]);
   const p = pricer(cur, st.rates);
   const today = todayInEgypt();
+  const windows = freeWindows(taken, today, Math.max(3, st.minNights), 3);
   const site = (process.env.NEXT_PUBLIC_SITE_URL ?? "").replace(/\/$/, "");
   const ld = {
     "@context": "https://schema.org", "@type": "VacationRental", name: "The Royal Nile Residence", description: "Private 3-bedroom Nile-view apartment in Aswan for up to 6 guests.",
     image: site ? [`${site}/photos/panorama.webp`, `${site}/photos/twin_wide.webp`] : undefined, address: { "@type": "PostalAddress", addressLocality: "Aswan", addressCountry: "EG", streetAddress: st.address },
+    geo: { "@type": "GeoCoordinates", latitude: st.mapLat, longitude: st.mapLng },
     containsPlace: { "@type": "Accommodation", numberOfBedrooms: 3, numberOfBathroomsTotal: 1, occupancy: { "@type": "QuantitativeValue", maxValue: st.maxGuests }, floorSize: { "@type": "QuantitativeValue", value: 120, unitCode: "MTK" } },
     telephone: `+${st.whatsapp}`,
   };
-  return (
-    <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(ld) }} />
-      <section className="hero">
-        <img className="hero-img" src="/photos/panorama.webp" alt="The Nile at Aswan with feluccas, Elephantine Island and the west bank hills" style={{ objectPosition: "60% 28%" }} fetchPriority="high" />
-        <div className="hero-card glass">
-          <div className="cap" style={{ color: "var(--cream)", fontSize: 11 }}>Tonight in Aswan</div>
-          <div className="serif" style={{ fontSize: 23, marginTop: 8, lineHeight: 1.2 }}>Sunset straight from your balcony.</div>
-          <div className="row mt16" style={{ flexWrap: "nowrap" }}>
-            <img src="/photos/feluccas.webp" alt="" style={{ width: 54, height: 54, borderRadius: 12, objectFit: "cover" }} />
-            <div style={{ fontSize: 13.5, lineHeight: 1.4 }}>Or on the water: <b>sunset felucca</b><br /><span style={{ opacity: .85 }}>local price, booked with your stay</span></div>
-          </div>
-        </div>
-        <div className="wrap hero-in">
-          <div className="cap" style={{ color: "var(--gold2)" }}>Your private home overlooking the Nile</div>
-          <h1 className="mt16">Not just a place to stay.<br /><i>Your whole Aswan.</i></h1>
-          <p>A 3-bedroom Nile-view residence — plus the boats, temples, drivers and dinners you'll want while you're here, booked for you at local prices.</p>
-          <form className="search" action="/book">
-            <label><span>CHECK-IN</span><input type="date" name="in" min={today} defaultValue={addDays(today, 14)} required /></label>
-            <label><span>CHECK-OUT</span><input type="date" name="out" min={addDays(today, 1)} defaultValue={addDays(today, 18)} required /></label>
-            <label><span>GUESTS</span><select name="guests" defaultValue="2">{Array.from({ length: st.maxGuests }, (_, i) => <option key={i} value={i + 1}>{i + 1} {i ? "guests" : "guest"}</option>)}</select></label>
-            <button className="btn btn-gold" type="submit">Check availability</button>
-          </form>
-        </div>
-      </section>
+  const facts: [string, string][] = [["area", "120 m² private apartment"], ["bed", "3 bedrooms"], ["users", `Up to ${st.maxGuests} guests`], ["sun", "Nile-view balcony"], ["wifi", "Fast Wi-Fi"], ["ac", "A/C in every room"], ["ship", "Minutes from the cruise docks"], ["pin", "2 min to Tolip Aswan"]];
 
-      <div className="facts"><div className="wrap">
-        {[["area", "120 m² private apartment"], ["bed", "3 bedrooms"], ["users", `Up to ${st.maxGuests} guests`], ["sun", "Nile-view balcony"], ["pin", "2 min to Tulip Aswan"]].map(([i, t]) => <span key={t}><Icon n={i} color="#E9C792" /> {t}</span>)}
+  return (
+    <div className="home">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(ld) }} />
+
+      {/* ---------- HERO: the booking card is the first thing you can use ---------- */}
+      <section className="h-hero">
+        <div className="h-hero-media"><img src="/photos/panorama.webp" alt="The Nile at Aswan with feluccas, Elephantine Island and the west bank hills" fetchPriority="high" /></div>
+        <div className="wrap h-hero-in">
+          <div className="h-copy">
+            <span className="h-badge"><span className="h-live" /> Private Nile-view apartment · Aswan</span>
+            <h1><span className="ln" style={{ ["--d" as string]: "0ms" }}>Your private home</span> <span className="ln" style={{ ["--d" as string]: "120ms" }}>on the Nile.</span> <span className="ln" style={{ ["--d" as string]: "240ms" }}><i>And all of Aswan.</i></span></h1>
+            <p className="h-lead">Three bedrooms, a balcony over the river, and the trips you came for — feluccas, Philae, Abu Simbel — booked at local prices.</p>
+            <div className="h-trust">
+              <span><Icon n="check" size={18} color="#E9C792" /> Book direct, best price</span>
+              <span><Icon n="check" size={18} color="#E9C792" /> Small deposit to confirm</span>
+              <span><Icon n="check" size={18} color="#E9C792" /> A real person on WhatsApp</span>
+            </div>
+          </div>
+          <HeroBooking today={today} taken={[...taken].sort()} windows={windows} nightlyUsd={st.nightlyUsd} cleaningUsd={st.cleaningUsd} minNights={st.minNights} maxGuests={st.maxGuests} currency={cur} rates={st.rates} />
+        </div>
+        <a className="h-scroll" href="#stay" aria-label="Scroll down"><span /></a>
+      </section>
+      <div id="hero-end" />
+
+      <div className="marquee" aria-label="Highlights"><div className="marquee-track">
+        {[...facts, ...facts].map(([i, t], k) => <span key={k} aria-hidden={k >= facts.length}><Icon n={i} color="#E9C792" size={18} /> {t}</span>)}
       </div></div>
 
-      <section className="section"><div className="wrap grid3">
-        {[["01", "Stay like a local", "Your own home on the Nile — three bedrooms, a kitchen, Wi-Fi and a balcony made for Aswan's sunsets."],
-          ["02", "Do Aswan properly", "Pick your trips while you book: feluccas, Philae, Abu Simbel, Nubian villages. We suggest a plan for your days."],
-          ["03", "We handle the rest", "Airport pickup, drivers, tickets and tips — one WhatsApp chat, at local prices."]].map(([n, t, d]) => (
-          <div key={n}><div className="num">{n}</div><h3 className="mt8" style={{ fontSize: 26 }}>{t}</h3><p className="muted mt8">{d}</p></div>
-        ))}
-      </div></section>
-
-      <section className="section-sm"><div className="wrap">
-        <div className="row" style={{ alignItems: "flex-end" }}>
-          <div><div className="cap">Add to your stay</div><h2 className="mt8">Aswan experiences, <i>at local prices</i></h2></div>
-          <span className="spacer" /><Link className="btn btn-ghost" href="/experiences">See all {exps.length} experiences →</Link>
+      {/* ---------- THE STAY ---------- */}
+      <section className="section" id="stay"><div className="wrap">
+        <div className="h-head rv">
+          <div><div className="cap">The residence</div><h2 className="mt8">A real home, <i>with the Nile outside the window.</i></h2></div>
+          <p className="lead">120 m² for families and friends — more space and privacy than a hotel room, in a modern building with an elevator, right on the Corniche.</p>
         </div>
-        <div className="grid4 mt32">{exps.slice(0, 4).map((e) => <ExpCard key={e.id} title={e.title} image={e.image} price={p(e.priceUsd)} unit={e.unit} duration={e.duration} href="/experiences" />)}</div>
+        <div className="snap mt32" tabIndex={0} aria-label="Photos of the residence">
+          {SPACES.map((s, i) => (
+            <figure key={s.src} className="snap-card rv" style={{ ["--i" as string]: i }}>
+              <img src={s.src} alt={`${s.t}: ${s.d}`} loading="lazy" />
+              <figcaption><b>{s.t}</b><span>{s.d}</span></figcaption>
+            </figure>
+          ))}
+        </div>
+        <div className="row mt24"><Link className="btn btn-navy" href="/stay">See every room & photo</Link><span className="muted small">Wi-Fi · washing machine · kitchen · TVs in all bedrooms</span></div>
       </div></section>
 
-      <section className="section"><div className="wrap grid2" style={{ alignItems: "center", gap: 48 }}>
-        <img className="photo" src="/photos/twin_wide.webp" alt="Bedroom with the balcony door open to the Nile" style={{ aspectRatio: "4/5", maxHeight: 620 }} loading="lazy" />
-        <div>
-          <div className="cap">The residence</div>
-          <h2 className="mt8">A real home, <i>with the Nile outside the window.</i></h2>
-          <p className="lead mt16">120 m² of space for families and friends — more room and privacy than a hotel, in a modern building with an elevator, right on Aswan's Corniche.</p>
-          <ul className="clean mt24 stack">
-            {ROOMS.map((r) => <li key={r.name} className="row" style={{ flexWrap: "nowrap" }}><img src={r.photo} alt="" style={{ width: 72, height: 56, borderRadius: 10, objectFit: "cover" }} loading="lazy" /><div><b>{r.name} · {r.beds}</b><div className="small muted">{r.note}</div></div></li>)}
-          </ul>
-          <div className="row mt32"><Link className="btn btn-navy" href="/stay">See the residence</Link><span className="muted">from <b style={{ color: "var(--ink)" }}>{p(st.nightlyUsd)}</b> / night</span></div>
+      {/* ---------- WHY BOOK DIRECT ---------- */}
+      <section className="section-sm"><div className="wrap">
+        <div className="why">
+          {[["01", "Best price, booked direct", "No booking-site fees. You deal with us, and we answer on WhatsApp."],
+            ["02", "Your trips, at local prices", "Feluccas, Philae, Abu Simbel and transfers with people we know — not the tourist price on the street."],
+            ["03", "Looked after from arrival", "A driver with your name at the airport, a trip page with every time and address, help whenever you need it."]].map(([n, t, d], i) => (
+            <div key={n} className="why-c rv" style={{ ["--i" as string]: i }}><span className="num">{n}</span><h3>{t}</h3><p>{d}</p></div>
+          ))}
         </div>
       </div></section>
 
+      {/* ---------- EXPERIENCES ---------- */}
+      <section className="section"><div className="wrap">
+        <div className="h-head rv">
+          <div><div className="cap">Add to your stay</div><h2 className="mt8">Aswan, <i>at the price locals pay.</i></h2></div>
+          <Link className="btn btn-ghost" href="/experiences">All {exps.length} experiences →</Link>
+        </div>
+        <div className="snap snap-exp mt32" tabIndex={0} aria-label="Aswan experiences">
+          {exps.map((e, i) => (
+            <Link key={e.id} href="/book" className="xcard rv" style={{ ["--i" as string]: i % 4 }}>
+              <img src={e.image} alt="" loading="lazy" />
+              <div className="xcard-b"><span className="chip">LOCAL PRICE</span><b>{e.title}</b><span className="muted small">{e.duration}</span>
+                <span className="xcard-p">from <b>{p(e.priceUsd)}</b> {e.unit === "GROUP" ? "per car" : "/ person"}</span></div>
+            </Link>
+          ))}
+        </div>
+      </div></section>
+
+      {/* ---------- HOW TO GET HERE ---------- */}
+      <section className="section h-arrive" id="getting-here"><div className="wrap">
+        <div className="h-head rv">
+          <div><div className="cap">How to get here</div><h2 className="mt8">Easy to reach, <i>right on the Corniche.</i></h2></div>
+          <p className="lead">Pick where you're coming from to see the route. Add a pickup when you book and you won't need to find us at all.</p>
+        </div>
+        <div className="mt32 rv"><ArrivalMap lat={st.mapLat} lng={st.mapLng} mapsUrl={st.mapsUrl} /></div>
+      </div></section>
+
+      {/* ---------- FINAL CALL TO BOOK ---------- */}
       <section className="section-sm"><div className="wrap">
-        <div className="band">
-          <div className="grid2" style={{ alignItems: "center" }}>
-            <div>
-              <div className="cap" style={{ color: "var(--gold2)" }}>Joining a Nile cruise?</div>
-              <h2 className="mt8">Stay the night before <i>— or after.</i></h2>
-              <p className="mt16">Several cruise docks are minutes away. Arrive a day early, see Aswan at your own pace, and we'll drop you at your boat.</p>
-              <div className="row mt24"><Link className="btn btn-gold" href="/book">Plan my stay</Link><a className="btn btn-wa" href={waLink(st.whatsapp, "Hi! I'm joining a Nile cruise and would like to stay before/after.")} target="_blank" rel="noopener"><WaIcon /> Ask us</a></div>
-            </div>
-            <img className="photo" src="/photos/cruise.webp" alt="Nile cruise boats near the residence" style={{ aspectRatio: "4/3" }} loading="lazy" />
+        <div className="h-cta rv">
+          <img src="/photos/feluccas.webp" alt="" loading="lazy" />
+          <div className="h-cta-in">
+            <div className="cap" style={{ color: "var(--gold2)" }}>Your dates are waiting</div>
+            <h2 className="mt8">Wake up to the Nile. <i>We'll handle the rest.</i></h2>
+            <p className="mt16">From <b>{p(st.nightlyUsd)}</b> a night for the whole apartment.{windows[0] ? ` Next free from ${fmtLong(windows[0].checkIn)}.` : ""}</p>
+            <div className="row mt24"><Link className="btn btn-gold" href="/book">Check dates & book</Link><a className="btn btn-wa" href={waLink(st.whatsapp, "Hi! I'd like to book The Royal Nile Residence.")} target="_blank" rel="noopener"><WaIcon /> Ask on WhatsApp</a></div>
           </div>
         </div>
       </div></section>
 
       <section className="section" id="faq"><div className="wrap grid2" style={{ gap: 48 }}>
-        <div><div className="cap">Good to know</div><h2 className="mt8">Questions guests <i>ask us</i></h2><p className="lead mt16">Anything else? Message us on WhatsApp — a real person answers.</p></div>
-        <div className="faq">{FAQ.map(([q, a]) => <details key={q}><summary>{q}</summary><p>{a}</p></details>)}</div>
+        <div className="rv"><div className="cap">Good to know</div><h2 className="mt8">Questions guests <i>ask us</i></h2><p className="lead mt16">Anything else? Message us on WhatsApp — a real person answers.</p></div>
+        <div className="faq rv">{FAQ.map(([q, a]) => <details key={q}><summary>{q}</summary><p>{a}</p></details>)}</div>
       </div></section>
-    </>
+
+      <StickyBook price={p(st.nightlyUsd)} />
+    </div>
   );
 }
