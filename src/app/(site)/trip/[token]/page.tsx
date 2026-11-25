@@ -10,6 +10,7 @@ import { WaIcon } from "@/components/ui";
 import ReceiptUpload from "@/components/ReceiptUpload";
 import CopyText from "@/components/CopyText";
 import { Confetti, Countdown, ShareTrip } from "@/components/TripFx";
+import { documentLinks } from "@/lib/documents";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "My trip", robots: { index: false, follow: false } };
@@ -20,7 +21,7 @@ export default async function Trip({ params, searchParams }: { params: Promise<{
   const { token } = await params; const sp = await searchParams;
   const b = await getBookingByToken(token);
   if (!b) notFound();
-  const [st, items, paid, exps] = await Promise.all([getSettings(), getItems(b.id), paidUsd(b.id), listExperiences(false)]);
+  const [st, items, paid, exps, docs] = await Promise.all([getSettings(), getItems(b.id), paidUsd(b.id), listExperiences(false), documentLinks(b)]);
   const img = new Map(exps.map((e) => [e.id, e.image]));
   const cur = isCurrency(b.currency) ? b.currency : "USD";
   const m = (u: number) => fmtMoney(u, cur, st.rates);
@@ -161,6 +162,18 @@ export default async function Trip({ params, searchParams }: { params: Promise<{
                 <div className="tp-paid"><div><span>Paid</span><b>{m(paid)}</b></div><div><span>On arrival</span><b>{m(balance)}</b></div></div>
                 {cur !== "USD" ? <p className="small muted mt8">Shown in {cur}; the booking is in US dollars ({fmtMoney(b.totalUsd)}).</p> : null}
               </div>
+            </div>
+            <div className="tp-card tp-docs">
+              <span className="tp-label">📄 Your documents</span>
+              <ul>
+                {docs.map((d) => (
+                  <li key={d.key}>
+                    <a href={d.href} target="_blank" rel="noopener"><i aria-hidden="true">PDF</i><span>{d.label}</span></a>
+                    <a className="tp-dl" href={`${d.href}?download=1`} aria-label={`Download ${d.label}`} title="Download">↓</a>
+                  </li>
+                ))}
+              </ul>
+              <p className="small muted">Receipts appear here as soon as we confirm each payment.</p>
             </div>
             <div className="tp-card tp-map">
               <span className="tp-label">📍 Finding us</span>

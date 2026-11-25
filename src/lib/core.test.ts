@@ -84,3 +84,20 @@ test("next free windows skip booked nights and don't overlap", () => {
     { checkIn: "2027-02-05", checkOut: "2027-02-08" }, { checkIn: "2027-02-10", checkOut: "2027-02-13" }, { checkIn: "2027-02-13", checkOut: "2027-02-16" }]);
   assert.deepEqual(freeWindows(new Set(), "2027-02-01", 2, 2), [{ checkIn: "2027-02-01", checkOut: "2027-02-03" }, { checkIn: "2027-02-03", checkOut: "2027-02-05" }]);
 });
+
+test("pdf: numbering, safe text and a real PDF", async () => {
+  const { renderPdf, docNumber, receiptable, fileName } = await import("./pdf.ts");
+  const pays = [{ id: 9, amountUsd: 50, method: "CASH", status: "CONFIRMED", createdAt: 3, note: "" }, { id: 4, amountUsd: 100, method: "INSTAPAY", status: "CONFIRMED", createdAt: 1, note: "" },
+    { id: 5, amountUsd: 80, method: "TRANSFER", status: "PENDING", createdAt: 2, note: "" }, { id: 6, amountUsd: -20, method: "REFUND", status: "CONFIRMED", createdAt: 4, note: "" }];
+  assert.deepEqual(receiptable(pays).map((p) => p.id), [4, 9]);
+  assert.equal(docNumber("receipt", "RN-1", pays, 9), "RC-RN-1-2");
+  assert.equal(docNumber("invoice", "RN-1", pays), "INV-RN-1");
+  assert.equal(fileName("booking", "RN-1", pays), "Royal-Nile-Booking-RN-1.pdf");
+  const settings = { rates: { EUR: 0.9, EGP: 50 }, whatsapp: "20100", email: "", instapay: "x@instapay", bankDetails: "", paymentNote: "", checkInTime: "14:00", checkOutTime: "12:00", address: "Aswan", arrivalInfo: "", houseRules: "", cancellationPolicy: "", siteUrl: "" };
+  const booking = { ref: "RN-1", status: "CONFIRMED", checkIn: "2027-01-01", checkOut: "2027-01-03", guests: 2, nights: 2, nightlyUsd: 85, stayUsd: 170, cleaningUsd: 0, totalUsd: 170, depositUsd: 43, currency: "USD", holdUntil: null, name: "محمد Müller → ✓", email: "", phone: "", country: "", createdAt: 0 };
+  for (const kind of ["booking", "invoice", "receipt"] as const) {
+    const bytes = await renderPdf({ kind, booking, items: [], payments: pays, settings, paymentId: 4 });
+    assert.equal(new TextDecoder().decode(bytes.slice(0, 5)), "%PDF-");
+  }
+  await assert.rejects(renderPdf({ kind: "receipt", booking, items: [], payments: pays, settings, paymentId: 5 }));
+});

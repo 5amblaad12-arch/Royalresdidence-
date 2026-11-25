@@ -736,3 +736,13 @@ body:has(.has-sticky) .wa-float { bottom: 104px; }
   .tp-paysteps li { padding-left: 40px; }
   .tp-timer { text-align: left; }
 }
+
+/* trip page: documents */
+.tp-docs ul { list-style: none; padding: 0; margin: 12px 0 10px; display: grid; gap: 8px; }
+.tp-docs li { display: flex; align-items: center; gap: 8px; }
+.tp-docs li > a:first-child { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; text-decoration: none; border: 1px solid var(--rule); border-radius: 14px; padding: 9px 12px; font-weight: 600; font-size: 14px; transition: border-color .2s, transform .2s; }
+.tp-docs li > a:first-child:hover { border-color: var(--gold); transform: translateX(2px); }
+.tp-docs li span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tp-docs i { font-style: normal; font-size: 9.5px; font-weight: 800; letter-spacing: .06em; color: #fff; background: var(--navy); border-radius: 6px; padding: 4px 6px; flex: none; }
+.tp-dl { flex: none; width: 38px; height: 38px; display: inline-flex; align-items: center; justify-content: center; border-radius: 12px; background: var(--paper); border: 1px solid var(--rule); text-decoration: none; font-weight: 800; color: var(--navy); }
+.tp-dl:hover { background: var(--cream); }

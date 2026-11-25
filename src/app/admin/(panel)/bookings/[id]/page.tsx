@@ -10,6 +10,7 @@ import { waLink } from "@/lib/wa";
 import { siteUrl } from "@/lib/notify";
 import { STATUS_PILL } from "@/components/ui";
 import EgyptKnightBox from "@/components/EgyptKnightBox";
+import { documentLinks } from "@/lib/documents";
 import { setStatus, extendHold, savePaymentDecision, addPayment, updateItem, addItem, removeItem, updateStay, updateGuest } from "../../actions";
 
 export const dynamic = "force-dynamic";
@@ -41,6 +42,8 @@ export default async function BookingPage({ params, searchParams }: { params: Pr
   const trip = `${siteUrl()}/trip/${b.token}`;
   const expired = ["REQUEST", "AWAITING_DEPOSIT"].includes(b.status) && b.holdUntil != null && b.holdUntil < Date.now();
   const pName = (pid: number | null) => partners.find((p) => p.id === pid);
+  const docs = await documentLinks(b, payments);
+  const docMsg = (label: string, href: string) => `Hi ${first}! Here is your ${label.replace(/ · .*/, "").toLowerCase()} for booking ${b.ref} at The Royal Nile Residence (PDF):\n${siteUrl()}${href}`;
   const msgs: [string, string][] = [
     ["Booking confirmed", `Hi ${first}! Your stay at The Royal Nile Residence is confirmed ✅\n${fmtLong(b.checkIn)} → ${fmtLong(b.checkOut)} · ${b.guests} guests\nYour trip page (times, payment, directions): ${trip}\nWe can't wait to welcome you to Aswan!`],
     ["Payment details", `Hi ${first}! To confirm booking ${b.ref}, please pay the deposit of ${usd(b.depositUsd)} (≈ ${fmtMoney(b.depositUsd, "EGP", st.rates)}).${st.instapay ? `\nInstaPay: ${st.instapay}` : ""}${st.bankDetails ? `\nBank: ${st.bankDetails}` : ""}\nThen upload the receipt here: ${trip}`],
@@ -112,6 +115,18 @@ export default async function BookingPage({ params, searchParams }: { params: Pr
               <label className="field" style={{ flex: 1 }}><span>Note</span><input name="note" placeholder="e.g. paid in EGP 12,000 on arrival" /></label>
               <button className="btn btn-navy btn-sm" type="submit">Record</button>
             </form>
+          </div>
+
+          <div className="card pad">
+            <div className="row"><b>Documents</b><span className="spacer" /><span className="small muted">Branded PDFs the guest can also open from their trip page</span></div>
+            {docs.map((d) => (
+              <div key={d.key} className="row mt8" style={{ padding: "10px 0", borderTop: "1px solid #EEE9E0" }}>
+                <span className="pill" style={{ background: "var(--navy)", color: "#fff" }}>PDF</span><b className="small" style={{ flex: 1 }}>{d.label}</b>
+                <a className="btn btn-light btn-sm" href={d.href} target="_blank" rel="noopener">View</a>
+                <a className="btn btn-light btn-sm" href={`${d.href}?download=1`}>Download</a>
+                {b.phone ? <a className="btn btn-wa btn-sm" href={waLink(b.phone, docMsg(d.label, d.href))} target="_blank" rel="noopener">Send</a> : null}
+              </div>
+            ))}
           </div>
 
           <div className="card pad">
