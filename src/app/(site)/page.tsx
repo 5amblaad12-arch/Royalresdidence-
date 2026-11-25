@@ -50,9 +50,9 @@ export default async function Home() {
             <h1><span className="ln" style={{ ["--d" as string]: "0ms" }}>Your private home</span> <span className="ln" style={{ ["--d" as string]: "120ms" }}>on the Nile.</span> <span className="ln" style={{ ["--d" as string]: "240ms" }}><i>And all of Aswan.</i></span></h1>
             <p className="h-lead">Three bedrooms, a balcony over the river, and the trips you came for — feluccas, Philae, Abu Simbel — booked at local prices.</p>
             <div className="h-trust">
-              <span><Icon n="check" size={18} color="#E9C792" /> Book direct, best price</span>
-              <span><Icon n="check" size={18} color="#E9C792" /> Small deposit to confirm</span>
-              <span><Icon n="check" size={18} color="#E9C792" /> A real person on WhatsApp</span>
+              <span><Icon n="check" size={18} color="#D4B57C" /> Book direct, best price</span>
+              <span><Icon n="check" size={18} color="#D4B57C" /> Small deposit to confirm</span>
+              <span><Icon n="check" size={18} color="#D4B57C" /> A real person on WhatsApp</span>
             </div>
           </div>
           <HeroBooking today={today} taken={[...taken].sort()} windows={windows} nightlyUsd={st.nightlyUsd} cleaningUsd={st.cleaningUsd} minNights={st.minNights} maxGuests={st.maxGuests} currency={cur} rates={st.rates} />
@@ -62,7 +62,7 @@ export default async function Home() {
       <div id="hero-end" />
 
       <div className="marquee" aria-label="Highlights"><div className="marquee-track">
-        {[...facts, ...facts].map(([i, t], k) => <span key={k} aria-hidden={k >= facts.length}><Icon n={i} color="#E9C792" size={18} /> {t}</span>)}
+        {[...facts, ...facts].map(([i, t], k) => <span key={k} aria-hidden={k >= facts.length}><Icon n={i} color="#D4B57C" size={18} /> {t}</span>)}
       </div></div>
 
       {/* ---------- THE STAY ---------- */}

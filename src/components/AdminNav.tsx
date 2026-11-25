@@ -12,7 +12,7 @@ export default function AdminNav({ attention, owner }: { attention: number; owne
         const on = h === "/admin" ? path === "/admin" : path.startsWith(h);
         return <Link key={h} href={h} className={`nav-i ${on ? "on" : ""}`}>{t}{n ? <span className="badge">{n}</span> : null}</Link>;
       })}
-      <Link href="/admin/bookings/new" className="nav-i" style={{ marginTop: 10, color: "#E9C792" }}>+ New booking</Link>
+      <Link href="/admin/bookings/new" className="nav-i" style={{ marginTop: 10, color: "#D4B57C" }}>+ New booking</Link>
     </>
   );
 }

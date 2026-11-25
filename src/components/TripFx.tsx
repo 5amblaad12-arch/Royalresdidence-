@@ -13,7 +13,7 @@ export function Confetti({ id, fire }: { id: string; fire: boolean }) {
     const dpr = Math.min(2, window.devicePixelRatio || 1);
     const resize = () => { c.width = innerWidth * dpr; c.height = innerHeight * dpr; };
     resize();
-    const colors = ["#B9894D", "#E9C792", "#173A4D", "#F1D7AE", "#3E7EA6", "#ffffff"];
+    const colors = ["#8B6D38", "#D4B57C", "#3C161A", "#EBDCC0", "#8B6D38", "#ffffff"];
     const parts = Array.from({ length: 160 }, (_, i) => {
       const left = i % 2 === 0;
       return { x: (left ? 0.08 : 0.92) * c.width, y: c.height * 0.62, vx: (left ? 1 : -1) * (4 + Math.random() * 9) * dpr, vy: -(10 + Math.random() * 12) * dpr,

@@ -5,7 +5,6 @@ import { headers } from "next/headers";
 import { one } from "@/lib/db";
 import { createSession, getSession } from "@/lib/auth";
 import { allow, clientIp } from "@/lib/notify";
-import { Mark } from "@/components/ui";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Sign in", robots: { index: false, follow: false } };
@@ -26,9 +25,9 @@ export default async function Login({ searchParams }: { searchParams: Promise<{ 
   if (await getSession()) redirect("/admin");
   const { e } = await searchParams;
   return (
-    <main style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "linear-gradient(160deg, #173A4D, #24566F)", padding: 20 }}>
+    <main style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "linear-gradient(160deg, #3C161A, #5E2A2F)", padding: 20 }}>
       <form action={login} className="card pad" style={{ width: "min(400px, 100%)", padding: 32 }}>
-        <div className="row"><Mark /><div><div className="serif" style={{ fontSize: 20 }}>The Royal Nile</div><div className="small muted">Admin</div></div></div>
+        <div style={{ textAlign: "center" }}><img src="/brand/logo.png" alt="The Royal Nile Residence" width={200} height={150} style={{ width: 200, height: "auto", margin: "0 auto" }} /><div className="small muted mt8">Admin</div></div>
         <h1 className="mt24" style={{ fontSize: 28 }}>Sign in</h1>
         {e ? <div className="err mt16">{e === "many" ? "Too many attempts. Please wait 15 minutes." : "Wrong email or password."}</div> : null}
         <label className="field mt16"><span>Email</span><input name="email" type="email" autoComplete="username" required /></label>

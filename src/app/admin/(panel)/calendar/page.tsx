@@ -6,7 +6,7 @@ import { addDays, monthName, todayInEgypt, fmtDay } from "@/lib/dates";
 import { addBlock, deleteBlock } from "../actions";
 
 export const dynamic = "force-dynamic";
-const COLOR: Record<string, string> = { CONFIRMED: "#173A4D", CHECKED_IN: "#2F7D64", COMPLETED: "#8FA7B5", RECEIPT_SENT: "#3E7EA6", AWAITING_DEPOSIT: "#B9894D", REQUEST: "#C9A06A" };
+const COLOR: Record<string, string> = { CONFIRMED: "#3C161A", CHECKED_IN: "#2F7D64", COMPLETED: "#B59A94", RECEIPT_SENT: "#8B6D38", AWAITING_DEPOSIT: "#8B6D38", REQUEST: "#C9A06A" };
 
 export default async function CalendarPage({ searchParams }: { searchParams: Promise<{ m?: string; e?: string }> }) {
   await requireStaff();
@@ -28,7 +28,7 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
     <div>
       <div className="adm-h"><h1>{monthName(mo - 1)} {y}</h1><span className="spacer" />
         <Link className="btn btn-light btn-sm" href={`/admin/calendar?m=${prev}`}>‹</Link><Link className="btn btn-light btn-sm" href="/admin/calendar">Today</Link><Link className="btn btn-light btn-sm" href={`/admin/calendar?m=${next}`}>›</Link></div>
-      <div className="row small" style={{ marginBottom: 12 }}>{[["#173A4D", "Confirmed"], ["#3E7EA6", "Receipt to check"], ["#B9894D", "Held — waiting"], ["#2F7D64", "Checked in"], ["#C9BFB1", "Blocked"]].map(([c, t]) => <span key={t} className="row" style={{ gap: 6 }}><i style={{ width: 12, height: 12, borderRadius: 3, background: c, display: "inline-block" }} />{t}</span>)}</div>
+      <div className="row small" style={{ marginBottom: 12 }}>{[["#3C161A", "Confirmed"], ["#8B6D38", "Receipt to check"], ["#8B6D38", "Held — waiting"], ["#2F7D64", "Checked in"], ["#C9BFB1", "Blocked"]].map(([c, t]) => <span key={t} className="row" style={{ gap: 6 }}><i style={{ width: 12, height: 12, borderRadius: 3, background: c, display: "inline-block" }} />{t}</span>)}</div>
       <div className="mcal">
         {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((d) => <div key={d} className="h">{d}</div>)}
         {cells.map((d) => {

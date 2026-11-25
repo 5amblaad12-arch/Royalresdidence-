@@ -1,6 +1,6 @@
 // Header, footer and the floating WhatsApp button for public pages.
 import Link from "next/link";
-import { Logo, WaIcon, Mark } from "./ui";
+import { Logo, WaIcon } from "./ui";
 import CurrencySwitch from "./CurrencySwitch";
 import { waLink } from "@/lib/wa";
 
@@ -37,7 +37,7 @@ export function Footer({ whatsapp, address }: { whatsapp: string; address: strin
       <div className="wrap">
         <div className="ftr-g">
           <div>
-            <div className="row"><Mark color="#E9C792" /><span className="serif" style={{ fontSize: 22, color: "#fff" }}>The Royal Nile Residence</span></div>
+            <img src="/brand/logo-light.png" alt="The Royal Nile Residence, Aswan" width={224} height={168} style={{ width: 224, height: "auto" }} />
             <p className="mt16" style={{ maxWidth: 380 }}>Your private home overlooking the Nile — and everything you want to do in Aswan, at local prices.</p>
             <p className="mt16">{address}</p>
           </div>

@@ -31,14 +31,16 @@ export function WaIcon({ size = 18 }: { size?: number }) {
   return <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm5.3 14.1c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .2-3.3-.7-2.8-1.1-4.6-4-4.7-4.2-.1-.2-1.1-1.5-1.1-2.9s.7-2 1-2.3c.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.8 2c.1.2.1.4 0 .5l-.4.6-.4.4c-.1.1-.3.3-.1.6.2.3.8 1.3 1.7 2.1 1.2 1 2.1 1.3 2.4 1.5.3.1.5.1.6-.1l.9-1.1c.2-.3.4-.2.7-.1l1.9.9c.3.1.5.2.5.3.1.2.1.7-.1 1.3z" /></svg>;
 }
 
-export function Mark({ size = 34, color = "#B9894D" }: { size?: number; color?: string }) {
-  return <svg width={size} height={size} viewBox="0 0 34 34" aria-hidden="true"><circle cx="17" cy="12" r="6" fill="none" stroke={color} strokeWidth="1.8" /><path d="M3 22c3.5-3 7-3 10.5 0s7 3 10.5 0 5-2.4 7-1.2M3 28c3.5-3 7-3 10.5 0s7 3 10.5 0 5-2.4 7-1.2" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" /></svg>;
+export function Mark({ size = 34, color }: { size?: number; color?: string }) {
+  // TRN monogram from the brand logo. A light colour (any value) switches to the cream/gold version for dark backgrounds.
+  const light = !!color && color !== "dark";
+  return <img src={light ? "/brand/mark-light.png" : "/brand/mark.png"} alt="" aria-hidden="true" width={Math.round(size * 1.22)} height={size} style={{ width: Math.round(size * 1.22), height: size, objectFit: "contain", flex: "none" }} />;
 }
 
 export function Logo({ light = false }: { light?: boolean }) {
   return (
     <Link href="/" className="logo" aria-label="The Royal Nile Residence — home">
-      <Mark color={light ? "#E9C792" : "#B9894D"} />
+      <Mark size={36} color={light ? "light" : undefined} />
       <span><span className="logo-t" style={{ color: light ? "#fff" : undefined, display: "block" }}>The Royal Nile</span><span className="logo-s" style={{ display: "block" }}>RESIDENCE · ASWAN</span></span>
     </Link>
   );
